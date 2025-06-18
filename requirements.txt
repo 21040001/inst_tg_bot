@@ -1,1 +1,5 @@
-python-telegram-bot==13.15
+python-telegram-bot==13.7
+instaloader==4.9.2
+python-dotenv==1.0.0
+gunicorn==20.1.0
+flask==2.3.2
