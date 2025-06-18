@@ -3,8 +3,7 @@ import json
 import threading
 import time
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
-# "Filters" yerine "filters" kullanın (küçük harf)
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 import instaloader
 from dotenv import load_dotenv
 
@@ -23,7 +22,6 @@ bot_stats = {
     "total_downloads": 0
 }
 
-
 # Helper functions
 def load_stats():
     global bot_stats
@@ -39,7 +37,6 @@ def load_stats():
     except Exception as e:
         print(f"Stats loading error: {e}")
 
-
 def save_stats():
     try:
         with open(STATS_FILE, 'w') as f:
@@ -51,7 +48,6 @@ def save_stats():
     except Exception as e:
         print(f"Stats saving error: {e}")
 
-
 def update_user_stats(user_id):
     user_id = str(user_id)
     if user_id not in bot_stats["active_users"]:
@@ -59,13 +55,11 @@ def update_user_stats(user_id):
         bot_stats["total_users"] = len(bot_stats["active_users"])
         threading.Thread(target=save_stats).start()
 
-
 def is_admin(user_id):
     return str(user_id) in ADMINS
 
-
 # Command handlers
-def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     update_user_stats(user.id)
 
@@ -76,53 +70,50 @@ def start(update: Update, context: CallbackContext):
         f"• Foydalanuvchilar: {bot_stats['total_users']}\n"
         f"• Yuklab olishlar: {bot_stats['total_downloads']}"
     )
-    update.message.reply_text(message)
+    await update.message.reply_text(message)
 
-
-def stats(update: Update, context: CallbackContext):
+async def stats(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     update_user_stats(user.id)
-    update.message.reply_text(
+    await update.message.reply_text(
         f"📊 Bot statistikasi:\n"
         f"• Jami foydalanuvchilar: {bot_stats['total_users']}\n"
         f"• Yuklab olishlar: {bot_stats['total_downloads']}"
     )
 
-
-def admin_stats(update: Update, context: CallbackContext):
+async def admin_stats(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     if not is_admin(user.id):
-        update.message.reply_text("❌ Bu buyruq faqat adminlar uchun!")
+        await update.message.reply_text("❌ Bu buyruq faqat adminlar uchun!")
         return
 
-    update.message.reply_text(
+    await update.message.reply_text(
         f"👑 Admin statistikasi:\n"
         f"• Faol foydalanuvchilar: {len(bot_stats['active_users'])}\n"
         f"• Jami yuklab olishlar: {bot_stats['total_downloads']}\n\n"
         f"📢 Xabar yuborish: /broadcast <xabar>"
     )
 
-
-def broadcast(update: Update, context: CallbackContext):
+async def broadcast(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     if not is_admin(user.id):
-        update.message.reply_text("❌ Bu buyruq faqat adminlar uchun!")
+        await update.message.reply_text("❌ Bu buyruq faqat adminlar uchun!")
         return
 
     if not context.args:
-        update.message.reply_text("❌ Iltimos xabar matnini kiriting!\nMasalan: /broadcast Salom do'stlar!")
+        await update.message.reply_text("❌ Iltimos xabar matnini kiriting!\nMasalan: /broadcast Salom do'stlar!")
         return
 
     message = " ".join(context.args)
     total_users = len(bot_stats['active_users'])
-    update.message.reply_text(f"📢 Xabar {total_users} foydalanuvchiga yuborilmoqda...")
+    await update.message.reply_text(f"📢 Xabar {total_users} foydalanuvchiga yuborilmoqda...")
 
     success = 0
     failed = 0
 
     for user_id in bot_stats["active_users"]:
         try:
-            context.bot.send_message(
+            await context.bot.send_message(
                 chat_id=int(user_id),
                 text=f"📢 Yangilik:\n\n{message}\n\n👉 @{context.bot.username}"
             )
@@ -132,23 +123,22 @@ def broadcast(update: Update, context: CallbackContext):
             print(f"Xabar yuborishda xatolik ({user_id}): {e}")
             failed += 1
 
-    update.message.reply_text(
+    await update.message.reply_text(
         f"✅ Xabar yuborish yakunlandi!\n"
         f"• Muvaffaqiyatli: {success}\n"
         f"• Muvaffaqiyatsiz: {failed}"
     )
 
-
-def handle_instagram(update: Update, context: CallbackContext):
+async def handle_instagram(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     update_user_stats(user.id)
     message_text = update.message.text
 
     if 'instagram.com' not in message_text:
-        update.message.reply_text("⚠️ Iltimos Instagram video linkini yuboring!")
+        await update.message.reply_text("⚠️ Iltimos Instagram video linkini yuboring!")
         return
 
-    update.message.reply_text("📥 Video yuklanmoqda, iltimos kuting...")
+    await update.message.reply_text("📥 Video yuklanmoqda, iltimos kuting...")
 
     try:
         L = instaloader.Instaloader()
@@ -162,7 +152,7 @@ def handle_instagram(update: Update, context: CallbackContext):
             if file.endswith('.mp4'):
                 video_path = os.path.join(folder_name, file)
                 with open(video_path, 'rb') as video_file:
-                    update.message.reply_video(
+                    await update.message.reply_video(
                         video=video_file,
                         caption="✅ Video muvaffaqiyatli yuklab olindi!\n\nYana video yuklab olish uchun link yuboring."
                     )
@@ -177,33 +167,28 @@ def handle_instagram(update: Update, context: CallbackContext):
         os.rmdir(folder_name)
 
     except instaloader.exceptions.InstaloaderException as e:
-        update.message.reply_text("❌ Instagramdan video yuklab olishda xatolik. Linkni tekshiring!")
+        await update.message.reply_text("❌ Instagramdan video yuklab olishda xatolik. Linkni tekshiring!")
     except Exception as e:
-        update.message.reply_text(f"❌ Kutilmagan xatolik: {str(e)}")
+        await update.message.reply_text(f"❌ Kutilmagan xatolik: {str(e)}")
 
-
-def main():
+def main() -> None:
     # Load stats
     load_stats()
-    print(
-        f"🤖 Bot ishga tushirilmoqda... | Foydalanuvchilar: {bot_stats['total_users']} | Yuklab olishlar: {bot_stats['total_downloads']}")
+    print(f"🤖 Bot ishga tushirilmoqda... | Foydalanuvchilar: {bot_stats['total_users']} | Yuklab olishlar: {bot_stats['total_downloads']}")
 
-    # Create updater and dispatcher
-    updater = Updater(TOKEN)
-    dispatcher = updater.dispatcher
+    # Create application
+    application = Application.builder().token(TOKEN).build()
 
     # Add handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("stats", stats))
-    dispatcher.add_handler(CommandHandler("admin", admin_stats))
-    dispatcher.add_handler(CommandHandler("broadcast", broadcast))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_instagram))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("stats", stats))
+    application.add_handler(CommandHandler("admin", admin_stats))
+    application.add_handler(CommandHandler("broadcast", broadcast))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram))
 
     # Start polling
-    updater.start_polling()
     print("✅ Bot muvaffaqiyatli ishga tushirildi!")
-    updater.idle()
-
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
