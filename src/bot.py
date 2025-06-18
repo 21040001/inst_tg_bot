@@ -3,7 +3,8 @@ import json
 import threading
 import time
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext
+# "Filters" yerine "filters" kullanın (küçük harf)
 import instaloader
 from dotenv import load_dotenv
 
