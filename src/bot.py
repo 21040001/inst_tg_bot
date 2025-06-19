@@ -2,8 +2,7 @@ import os
 import json
 import threading
 import time
-from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters ,CallbackContext
 import instaloader
 from dotenv import load_dotenv
 
@@ -173,23 +172,21 @@ async def post_init(application: Application) -> None:
     load_stats()
     print(f"🤖 Bot ishga tushirilmoqda... | Foydalanuvchilar: {bot_stats['total_users']} | Yuklab olishlar: {bot_stats['total_downloads']}")
 
+
+
 def main() -> None:
-    # Create application
-    application = Application.builder() \
-        .token(TOKEN) \
-        .post_init(post_init) \
-        .build()
+    updater = Updater(TOKEN, use_context=True)
+    dp = updater.dispatcher
 
-    # Add handlers
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("stats", stats))
-    application.add_handler(CommandHandler("admin", admin_stats))
-    application.add_handler(CommandHandler("broadcast", broadcast))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram))
+    dp.add_handler(CommandHandler("start", start))
+    dp.add_handler(CommandHandler("stats", stats))
+    dp.add_handler(CommandHandler("admin", admin_stats))
+    dp.add_handler(CommandHandler("broadcast", broadcast))
+    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_instagram))
 
-    # Start polling
     print("✅ Bot başlatılıyor...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    updater.start_polling()
+    updater.idle()
 
 if __name__ == '__main__':
     import asyncio
