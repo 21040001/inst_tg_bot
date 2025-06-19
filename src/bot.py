@@ -188,8 +188,8 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram))
 
     # Start polling
-    application.run_polling()
-    print("✅ Bot muvaffaqiyatli ishga tushirildi!")
+    print("✅ Bot başlatılıyor...")
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
     import asyncio
