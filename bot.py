@@ -62,15 +62,13 @@ def is_admin(user_id):
 async def start(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
     update_user_stats(user.id)
-
-    message = (
+    await update.message.reply_text(
         f"👋 Assalomu alaykum {user.first_name}!\n\n"
         "Instagram video linkini yuboring, men yuklab beraman.\n\n"
         f"📊 Bot statistikasi:\n"
         f"• Foydalanuvchilar: {bot_stats['total_users']}\n"
         f"• Yuklab olishlar: {bot_stats['total_downloads']}"
     )
-    await update.message.reply_text(message)
 
 async def stats(update: Update, context: CallbackContext) -> None:
     user = update.effective_user
@@ -118,7 +116,7 @@ async def broadcast(update: Update, context: CallbackContext) -> None:
                 text=f"📢 Yangilik:\n\n{message}\n\n👉 @{context.bot.username}"
             )
             success += 1
-            time.sleep(0.3)  # Rate limit
+            await asyncio.sleep(0.3)  # Rate limit
         except Exception as e:
             print(f"Xabar yuborishda xatolik ({user_id}): {e}")
             failed += 1
@@ -171,13 +169,16 @@ async def handle_instagram(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         await update.message.reply_text(f"❌ Kutilmagan xatolik: {str(e)}")
 
-def main() -> None:
-    # Load stats
+async def post_init(application: Application) -> None:
     load_stats()
     print(f"🤖 Bot ishga tushirilmoqda... | Foydalanuvchilar: {bot_stats['total_users']} | Yuklab olishlar: {bot_stats['total_downloads']}")
 
+def main() -> None:
     # Create application
-    application = Application.builder().token(TOKEN).build()
+    application = Application.builder() \
+        .token(TOKEN) \
+        .post_init(post_init) \
+        .build()
 
     # Add handlers
     application.add_handler(CommandHandler("start", start))
@@ -187,8 +188,9 @@ def main() -> None:
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram))
 
     # Start polling
-    print("✅ Bot muvaffaqiyatli ishga tushirildi!")
     application.run_polling()
+    print("✅ Bot muvaffaqiyatli ishga tushirildi!")
 
 if __name__ == '__main__':
-    main()
+    import asyncio
+    asyncio.run(main())
