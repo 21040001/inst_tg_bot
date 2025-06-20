@@ -185,7 +185,7 @@ def main() -> None:
     application.add_handler(CommandHandler("stats", stats))
     application.add_handler(CommandHandler("admin", admin_stats))
     application.add_handler(CommandHandler("broadcast", broadcast))
-    application.add_handler(MessageHandler(filters.TEXT & ~Filters.COMMAND, handle_instagram))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_instagram))
 
     print("✅ Bot başlatılıyor...")
     application.run_polling()
