@@ -3,7 +3,7 @@ import json
 import threading
 import asyncio
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, Application
+from telegram.ext import Updater, CommandHandler, MessageHandler, filters, CallbackContext, Application
 import instaloader
 from dotenv import load_dotenv
 import filetype  # imghdr alternatifi
@@ -184,7 +184,7 @@ def main() -> None:
     application.add_handler(CommandHandler("stats", stats))
     application.add_handler(CommandHandler("admin", admin_stats))
     application.add_handler(CommandHandler("broadcast", broadcast))
-    application.add_handler(MessageHandler(Filters.TEXT & ~Filters.COMMAND, handle_instagram))
+    application.add_handler(MessageHandler(filters.TEXT & ~Filters.COMMAND, handle_instagram))
 
     print("✅ Bot başlatılıyor...")
     application.run_polling()
