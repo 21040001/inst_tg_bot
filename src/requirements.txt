@@ -1,1 +1,5 @@
-python-telegram-bot==13.15
+python-telegram-bot>=20.0
+instaloader>=4.9
+python-dotenv>=0.19
+filetype>=1.0
+Pillow>=9.0
