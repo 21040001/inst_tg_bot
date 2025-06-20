@@ -1,10 +1,12 @@
 import os
 import json
 import threading
-import time
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters ,CallbackContext
+import asyncio
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, Application
 import instaloader
 from dotenv import load_dotenv
+import filetype  # imghdr alternatifi
 
 # Load environment variables
 load_dotenv()
@@ -20,6 +22,9 @@ bot_stats = {
     "active_users": set(),
     "total_downloads": 0
 }
+
+# Monkey patch for imghdr (if needed)
+sys.modules['imghdr'] = type('imghdr', (), {'what': lambda x: filetype.guess(x).extension if filetype.guess(x) else None})
 
 # Helper functions
 def load_stats():
@@ -172,22 +177,17 @@ async def post_init(application: Application) -> None:
     load_stats()
     print(f"🤖 Bot ishga tushirilmoqda... | Foydalanuvchilar: {bot_stats['total_users']} | Yuklab olishlar: {bot_stats['total_downloads']}")
 
-
-
 def main() -> None:
-    updater = Updater(TOKEN, use_context=True)
-    dp = updater.dispatcher
+    application = Application.builder().token(TOKEN).post_init(post_init).build()
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("stats", stats))
-    dp.add_handler(CommandHandler("admin", admin_stats))
-    dp.add_handler(CommandHandler("broadcast", broadcast))
-    dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_instagram))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("stats", stats))
+    application.add_handler(CommandHandler("admin", admin_stats))
+    application.add_handler(CommandHandler("broadcast", broadcast))
+    application.add_handler(MessageHandler(Filters.TEXT & ~Filters.COMMAND, handle_instagram))
 
     print("✅ Bot başlatılıyor...")
-    updater.start_polling()
-    updater.idle()
+    application.run_polling()
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
